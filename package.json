@@ -1,8 +1,11 @@
 {
   "name": "gimp",
   "version": "0.0.0",
+  "browser": "true",
   "scripts": {
+    "fixnpm": "npm cache validate",
     "uncache": "rm -rf .angular/cache",
+    "clean": "rm -rf dist/*",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",

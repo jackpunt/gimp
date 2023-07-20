@@ -7,7 +7,7 @@ import { KeyBinder } from '@thegraid/easeljs-lib';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = `HexaGon - User Guide`;
+  title = `Canvas Image Creater`;
   timestamp = `${new Date().toLocaleTimeString('en-US')}`;
 
   constructor(@Inject(KeyBinder) private keyBinder: KeyBinder) { }
