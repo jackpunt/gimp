@@ -13,6 +13,7 @@ export function buildURL(scheme = 'wss', host = TP.ghost, domain = TP.gdomain, p
   return `${scheme}://${host}.${domain}:${port}${path}`
 }
 export class TP {
+  static inMarket = { Busi: 2, Resi: 2, Monument: 3 } as const;
   static parallelAttack = true;  // true --> N intersects S
   static allowSacrifice = true;
   static yield = true     // Planner should yield when dmc > yieldMs [from before Worker?]

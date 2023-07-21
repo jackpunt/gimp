@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { stime } from '@thegraid/easeljs-lib';
 import { } from 'wicg-file-system-access';
 import { buildURL, TP } from '../table-params';
+import { ImageSetup } from '../image-setup';
 
 @Component({
   selector: 'stage-comp',
@@ -20,9 +21,9 @@ export class StageComponent implements OnInit {
   ext: string = '';
 
   @Input('width')
-  width = 1600.0;   // [pixels] size of "Viewport" of the canvas / Stage
+  width = 2550.0;   // [pixels] size of "Viewport" of the canvas / Stage
   @Input('height')
-  height = 800.0;   // [pixels] size of "Viewport" of the canvas / Stage
+  height = 3300.0;   // [pixels] size of "Viewport" of the canvas / Stage
 
   /** HTML make a \<canvas/> with this ID: */
   mapCanvasId = "mapCanvas" + this.getId(); // argument to new Stage(this.canvasId)
@@ -55,7 +56,7 @@ export class StageComponent implements OnInit {
     TP.networkUrl = buildURL(undefined)
     let extstr = urlParams.get('ext')
     let ext = !!extstr ? extstr.split(',') : []
-    // new GameSetup(this.mapCanvasId, ext) // load images; new GamePlay
+    new ImageSetup(this.mapCanvasId, ext) // load images; new GamePlay
   }
   // see: stream-writer.setButton
   static enableOpenFilePicker(method: 'showOpenFilePicker' | 'showSaveFilePicker' | 'showDirectoryPicker',
