@@ -14,6 +14,8 @@ export function buildURL(scheme = 'wss', host = TP.ghost, domain = TP.gdomain, p
 }
 export class TP {
   static inMarket = { Busi: 2, Resi: 2, Monument: 3 } as const;
+  static snapToPixel = true;
+  static useEwTopo = false;
   static parallelAttack = true;  // true --> N intersects S
   static allowSacrifice = true;
   static yield = true     // Planner should yield when dmc > yieldMs [from before Worker?]
@@ -64,6 +66,7 @@ export class TP {
   /** exclude whole Extension sets */
   static excludeExt: string[] = ["Policy", "Event", "Roads", "Transit"]; // url?ext=Transit,Roads
   // timeout: see also 'autoEvent'
+  static stepDwell:  number = 150
   static moveDwell:  number = 600
   static flashDwell: number = 500
   static flipDwell:  number = 200 // chooseStartPlayer dwell between each card flip

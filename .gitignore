@@ -1,5 +1,8 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
+/src/**/*.xcf
+/src/**/*.png
+
 # Compiled output
 /dist
 /tmp

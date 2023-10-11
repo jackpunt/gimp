@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { stime } from '@thegraid/easeljs-lib';
 import { } from 'wicg-file-system-access';
 import { buildURL, TP } from '../table-params';
@@ -16,9 +16,10 @@ export class StageComponent implements OnInit {
   getId(): string {
     return "T" + (StageComponent.idnum = StageComponent.idnum + 1);
   };
-  /** names of extensions to be removed: ext=Transit,Roads */
-  // @Input('ext')
-  ext: string = '';
+  /** the query string: ?a=...&b=...&c=... =>{a: ..., b: ..., c:...} */
+  @Input('params')
+  qParams: Params = {};
+
 
   @Input('width')
   width = 2550.0;   // [pixels] size of "Viewport" of the canvas / Stage
@@ -31,13 +32,12 @@ export class StageComponent implements OnInit {
   constructor(private activatedRoute: ActivatedRoute) {}
   ngOnInit() {
     console.log(stime(this, ".noOnInit---"))
-    let x = this.activatedRoute.params.subscribe(params => {
+    this.activatedRoute.params.subscribe(params => {
       console.log(stime(this, ".ngOnInit: params="), params)
     })
-    let y = this.activatedRoute.queryParams.subscribe(params => {
-      console.log(stime(this, ".ngOnInit: queryParams="), params)
-      // this.ext = params['ext'];
-      // console.log(stime(this, ".ngOnInit: ext="), this.ext);
+    this.activatedRoute.queryParams.subscribe(params => {
+      console.log(stime(this, ".ngOnInit: queryParams="), params);
+      this.qParams = params;
     });
   }
 
@@ -46,7 +46,7 @@ export class StageComponent implements OnInit {
   }
   ngAfterViewInit2() {
     let href: string = document.location.href;
-    console.log(stime(this, ".ngAfterViewInit---"), href, "ext=", this.ext)
+    console.log(stime(this, ".ngAfterViewInit---"), href, "qParams=", this.qParams);
     if (href.endsWith("startup")) {
 
     }
@@ -56,7 +56,7 @@ export class StageComponent implements OnInit {
     TP.networkUrl = buildURL(undefined)
     let extstr = urlParams.get('ext')
     let ext = !!extstr ? extstr.split(',') : []
-    new ImageSetup(this.mapCanvasId, ext) // load images; new GamePlay
+    new ImageSetup(this.mapCanvasId, this.qParams) // load images; new GamePlay
   }
   // see: stream-writer.setButton
   static enableOpenFilePicker(method: 'showOpenFilePicker' | 'showSaveFilePicker' | 'showDirectoryPicker',

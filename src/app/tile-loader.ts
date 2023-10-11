@@ -19,8 +19,8 @@ export class TileLoader {
   };
 
   /** use ImageLoader to load images, THEN invoke callback. */
-  loadImages(cb: () => void) {
-    new ImageLoader(this.imageArgs, this.imageMap, (imap) => cb())
+  loadImages(imageArgs = this.imageArgs , cb: (imap: Map<string, HTMLImageElement>) => void) {
+    new ImageLoader(imageArgs, this.imageMap, (imap) => cb(imap))
   }
   getImage(name: string) {
     return this.imageMap.get(this.aliases[name] ?? name);
