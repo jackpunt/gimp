@@ -3,7 +3,7 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { stime } from '@thegraid/easeljs-lib';
 import { } from 'wicg-file-system-access';
 import { buildURL, TP } from '../table-params';
-import { ImageSetup } from '../image-setup';
+import { CardExporter } from '../card-exporter';
 
 @Component({
   selector: 'stage-comp',
@@ -56,7 +56,7 @@ export class StageComponent implements OnInit {
     TP.networkUrl = buildURL(undefined)
     let extstr = urlParams.get('ext')
     let ext = !!extstr ? extstr.split(',') : []
-    new ImageSetup(this.mapCanvasId, this.qParams) // load images; new GamePlay
+    new CardExporter(this.mapCanvasId, this.qParams) // load images; new GamePlay
   }
   // see: stream-writer.setButton
   static enableOpenFilePicker(method: 'showOpenFilePicker' | 'showSaveFilePicker' | 'showDirectoryPicker',
