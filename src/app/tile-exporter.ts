@@ -3,16 +3,23 @@ import { Container, DisplayObject } from "@thegraid/easeljs-module";
 import { H } from "./hex-intfs";
 import { ImageGrid, PageSpec } from "./image-setup";
 import { CircleShape, HexShape, PaintableShape, TileShape } from "./shapes";
+// end imports
 
 class Player {
-  static allPlayers: Player[] = []
+  static allPlayers: Player[] = [];
 }
+
 interface Tile extends DisplayObject {
   baseShape: DisplayObject;
   radius: number;
-  setPlayerAndPaint(player: Player | undefined): void;
+  setPlayerAndPaint(player?: Player): void;
 }
-export type CountClaz = [count: number, claz: Constructor<Tile>, ...args: any];
+
+interface Claz extends Constructor<Tile> {
+  rotateBack: number | undefined;
+}
+
+export type CountClaz = [count: number, claz: Claz, ...args: any];
 export class TileExporter {
   constructor(buttonId = 'makePage', label = 'MakePages') {
     this.setAnchorClick(buttonId, label, () => this.makeImagePages());
@@ -29,18 +36,18 @@ export class TileExporter {
   makeImagePages() {
     const u = undefined, p0 = Player.allPlayers[0], p1 = Player.allPlayers[1];
     const hexDouble = [
-
     ] as CountClaz[];
-    const circDouble = [ ] as CountClaz[];
+    const circDouble = [
+    ] as CountClaz[];
 
     const pageSpecs: PageSpec[] = [];
-    this.tilesToTemplate(circDouble, ImageGrid.circDouble_0_79, pageSpecs);
-    this.tilesToTemplate(hexDouble, ImageGrid.hexDouble_1_19, pageSpecs);
+    this.clazToTemplate(circDouble, ImageGrid.circDouble_0_79, pageSpecs);
+    this.clazToTemplate(hexDouble, ImageGrid.hexDouble_1_19, pageSpecs);
     this.downloadPageSpecs(pageSpecs);
   }
 
   /** compose bleed, background and Tile (Tile may be transparent, so white background over bleed) */
-  composeTile(claz: Constructor<Tile>, args: any[], player: Player | undefined, edge: 'L' | 'R' | 'C', addBleed = 28) {
+  composeTile(claz: Constructor<Tile>, args: any[], player?: Player, edge: 'L' | 'R' | 'C' = 'C', addBleed = 28) {
     const cont = new Container();
     if (claz) {
       const tile = new claz(...args), base = tile.baseShape as PaintableShape;
@@ -63,7 +70,7 @@ export class TileExporter {
   }
 
   /** each PageSpec will identify the canvas that contains the Tile-Images */
-  tilesToTemplate(countClaz: CountClaz[], gridSpec = ImageGrid.hexDouble_1_19, pageSpecs: PageSpec[] = []) {
+  clazToTemplate(countClaz: CountClaz[], gridSpec = ImageGrid.hexDouble_1_19, pageSpecs: PageSpec[] = []) {
     const both = true, double = gridSpec.double ?? true;
     const frontAry = [] as DisplayObject[][];
     const backAry = [] as (DisplayObject[] | undefined)[];
@@ -83,9 +90,14 @@ export class TileExporter {
         frontAry[pagen].push(frontTile);
         if (double) {
           const backAryPagen = backAry[pagen] ?? (backAry[pagen] = []) as (DisplayObject | undefined)[];
-          const backTile = (claz.name === 'BonusTile') ? undefined : this.composeTile(claz, args, backPlayer, edge, addBleed);
-          const tile = backTile?.getChildAt(2);
-          backAryPagen.push(backTile);
+          if (claz.rotateBack !== undefined) {
+            const backTile = this.composeTile(claz, args, backPlayer, edge, addBleed);
+            const tile = backTile?.getChildAt(2);
+            tile.rotation = claz.rotateBack;
+            backAryPagen.push(backTile);
+          } else {
+            backAryPagen.push(undefined);
+          }
         }
       }
     });
