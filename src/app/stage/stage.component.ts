@@ -27,7 +27,7 @@ export class StageComponent implements OnInit {
   height = 3300.0;   // [pixels] size of "Viewport" of the canvas / Stage
 
   /** HTML make a \<canvas/> with this ID: */
-  mapCanvasId = "mapCanvas" + this.getId(); // argument to new Stage(this.canvasId)
+  mapCanvasId = "stageComp" + this.getId(); // argument to new Stage(this.canvasId)
 
   constructor(private activatedRoute: ActivatedRoute) {}
   ngOnInit() {

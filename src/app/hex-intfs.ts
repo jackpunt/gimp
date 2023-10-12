@@ -7,21 +7,16 @@ export type XYWH = { x: number, y: number, w: number, h: number } // like a Rect
 export type EwDir = Exclude<HexDir, 'N' | 'S' | 'EN' | 'WN' | 'ES' | 'WS'>;
 export type NsDir = Exclude<HexDir, 'E' | 'W' | 'NE' | 'NW' | 'SE' | 'SW'>;
 
+export type InfDir = Exclude<HexDir, 'N' | 'S' | 'EN' | 'ES' | 'WS' | 'WN'>        //
+export type HexAxis = Exclude<InfDir, 'SW' | 'W' | 'NW'>
+
 type DCR    = { [key in "dc" | "dr"]: number }  // Delta for Col & Row
 export type TopoEW = { [key in EwDir]: DCR }
 export type TopoNS = { [key in NsDir]: DCR }
 export type Topo = TopoEW | TopoNS
 
-// export type InfDir = EwDir; // for hexline & hextown
-// export type HexAxis = Exclude<InfDir, 'SW' | 'W' | 'NW'>; // reduced to 3 visual axies
-
 /** Hex things */
 export namespace H {
-  // export const axis: HexAxis[] = [NE, E, SE];           // minimal reference directions
-  // export const infDirs: InfDir[] = dirs as InfDir[]     // until we extract from typeof InfDir
-  // export const dnToAxis: { [key in InfDir]: HexAxis } = { NW: 'SE', W: 'E', SW: 'NE', NE: 'NE', E: 'E', SE: 'SE' }
-  // export const dnToAxis2: { [key in InfDir]: InfDir } = { NW: 'NW', W: 'W', SW: 'SW', NE: 'NE', E: 'E', SE: 'SE' }
-
   export const degToRadians = Math.PI / 180;
   export const sqrt3 = Math.sqrt(3)  // 1.7320508075688772
   export const sqrt3_2 = H.sqrt3 / 2;
@@ -40,7 +35,7 @@ export namespace H {
   export const WS: HexDir = "WS"
   export const WN: HexDir = "WN"
   export function hexBounds(r: number, tilt = 0) {
-    // dp(...6), so tilt: 30 | 0; being nsAxis or ewAxis;
+    // dp(...6), so tilt: 30 | 0; being nsAxis (ewTopo) or ewAxis (nsTopo);
     const w = r * Math.cos(H.degToRadians * tilt);
     const h = r * Math.cos(H.degToRadians * (tilt - 30));
     return { x: -w, y: -h, width: 2 * w, height: 2 * h };
@@ -82,6 +77,12 @@ export namespace H {
   export const dirRevEW: {[key in EwDir] : EwDir} = { E: W, W: E, NE: SW, SE: NW, SW: NE, NW: SE }
   export const dirRevNS: {[key in NsDir] : NsDir} = { N: S, S: N, EN: WS, ES: WN, WS: EN, WN: ES }
   export const rotDir: { [key: number]: HexDir } = { 0: 'N', 30: 'NE', 60: 'EN', 90: 'E', 120: 'ES', 150: 'SE', 180: 'S', 210: 'SW', 240: 'WS', 270: 'W', 300: 'WN', 330: 'NW', 360: 'N' }
+
+  export const axis: HexAxis[] = [NE, E, SE];           // minimal reference directions
+  export const dirs: HexDir[] = [NE, E, SE, SW, W, NW]; // standard direction signifiers () ClockWise
+  export const infDirs: InfDir[] = dirs as InfDir[];
+  export const dnToAxis: { [key in InfDir]: HexAxis } = { NW: 'SE', W: 'E', SW: 'NE', NE: 'NE', E: 'E', SE: 'SE' }
+  export const dnToAxis2: { [key in InfDir]: InfDir } = { NW: 'NW', W: 'W', SW: 'SW', NE: 'NE', E: 'E', SE: 'SE' }
 
   export const capColor1:   string = "rgba(150,  0,   0, .8)"  // unplayable: captured last turn
   export const capColor2:   string = "rgba(128,  80, 80, .8)"  // protoMove would capture

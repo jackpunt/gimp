@@ -1,6 +1,7 @@
 import { ImageLoader } from "@thegraid/common-lib";
 import { TP } from "./table-params";
 
+/** extracted from Tile.ts: list images to be loaded using common-lib/ImageLoade. */
 export class TileLoader {
   Uname = ['Univ0'];
   Monu = new Array(TP.inMarket['Monument']).fill(1).map((v, k) => `Monument${k}`);

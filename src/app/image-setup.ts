@@ -1,112 +1,214 @@
 import { Params } from "@angular/router";
-import { C, stime } from "@thegraid/common-lib";
-import { makeStage } from "@thegraid/easeljs-lib";
-import { Bitmap, Container, Shape } from "@thegraid/easeljs-module";
-import { HexShape } from "./shapes";
-import { TP } from "./table-params";
+import { WH, XYWH, stime } from "@thegraid/common-lib";
+import { Container, DisplayObject, Stage } from "@thegraid/easeljs-module";
 import { TileLoader } from "./tile-loader";
+import { RectShape } from "./shapes";
 
-export class ImageSetup {
-  circle_1_inch = { x0: .9, y0: 1.0, rad: 1.0, delx: (1 + 1 / 8), dely: (1 + 1 / 8), bleed: .05, maxx: 2200, dpi: 300 };
-  singleHex_1_19 = { x0: 575, y0: 450, rad: 415, delx: 357, dely: 413, maxx: 2500, maxy: 2900, bleed: 0 }; // 27
-
-  stage: createjs.Stage;
-  imageCont = new ImageContainer();
-  loader: TileLoader = new TileLoader(); // Citymap tiles: Resi, Busi, Lake, Univ, etc.
-
-  constructor(public canvasId: string, public params: Params) {
-    stime.fmt = "MM-DD kk:mm:ss.SSS";
-    this.stage = makeStage(canvasId, false);
-    TP.useEwTopo = false;
-    this.setupDownload();
-    this.loader.loadImages(undefined, (imap) => this.startup(params, imap))
-  }
-
-  counts = { Bank: 5, Busi: 5, Resi: 5, Lake: 5, Pstation: 5, Recycle: 0 };
-  colors = ['red', 'blue'].map(cs => C.nameToRgbaString(cs, '.9'))
-  startup(params: Params, imap: Map<string, HTMLImageElement>) {
-    const ic = this.imageCont;
-    ic.setGrid(this.singleHex_1_19);
-    this.stage.addChild(ic);
-    let row = 0, col = 0;
-    imap.forEach((img, key) => {
-      this.colors.forEach(color => {
-        let count = ((this.counts as any)[key] ?? 2);
-        while (count-- > 0) {
-          ic.addImage(img, row, col, color, .7);
-          this.stage.update();
-          if ((ic.x0 + ++col * ic.delx) > ic.maxx) {
-            col = 0;
-            row += 1;
-          }
-        }
-      })
-    })
-    const button = document.getElementById('download') as HTMLButtonElement;
-    button.click();
-  }
-  setupDownload() {
-    const button = document.getElementById('download') as HTMLButtonElement;
-    button.onclick = (ev) => this.download();
-  }
-
-  download() {
-    const canvas = document.getElementById(this.canvasId) as HTMLCanvasElement;
-    const download = document.getElementById("download") as HTMLButtonElement;
-    const image = canvas.toDataURL("image/png");
-    const octets = image.replace("image/png", "image/octet-stream");
-    download.setAttribute("href", octets);
-  }
+class RoundedRect extends RectShape {
 
 }
-class ImageContainer extends Container {
-  pxi(inch: number) { return this.dpi * inch; }
+export class ImageSetup {
+  stage: Stage;
+  imageArgs = { root: '', fnames: [], ext: 'png' };
 
-  rad = this.pxi(1.0);
-  x0 = this.pxi(.9);
-  y0 = this.pxi(1.0) ;
-  delx = this.pxi(1 + 1 / 8);
-  dely = this.delx;
-  bleed = this.pxi(.1);
-  maxx = 2200;
-
-  constructor(public dpi = 300) {
-    super();
+  constructor (public canvasId: string, public qParams: Params) {
+    stime.fmt = "MM-DD kk:mm:ss.SSS"
+    this.stage = makeStage(canvasId, false)
+    new TileLoader().loadImages(this.imageArgs, (imap) => this.startup(qParams, imap));
   }
-  setGrid(layin: { x0?: number; y0?: number; rad?: number; delx?: number; dely?: number, maxx?: number; bleed?: number, dpi?: number }) {
-    const layout = { x0: 1, y0: 1, rad: 30, delx: 1.1, dely: 1.1, bleed: .1, dpi: 1, maxx: 2200, ...layin }
-    this.dpi = layout.dpi
-    this.rad = this.pxi(layout.rad);
-    this.x0 = this.pxi(layout.x0);
-    this.y0 = this.pxi(layout.y0);
-    this.delx = this.pxi(layout.delx);
-    this.dely = this.pxi(layout.dely);
-    this.bleed = this.pxi(layout.bleed);
-    this.maxx = this.pxi(layout.maxx);
+  startup(qParams: Params, imap: Map<string, HTMLImageElement>) {
+    const card = this.makeCard({}, 'red');
+    this.stage.x = 100; this.stage.y = 30;
+    this.stage.addChild(card);
+    this.stage.update();
+    this.stage.update();
   }
 
-  paintDisk(color: string, x = 0, y = 0, rad = this.rad) {
-    const disk = new Shape();
-    disk.graphics.f(color).dc(0, 0, rad + this.bleed);
-    disk.x = x; disk.y = y;
-    const hex = new HexShape(rad);
-    hex.paint('grey', true);
-    return disk;
+  makeCard(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'white' ) {
+    const parms = { gap: 10, bw: 30, cw: 250, bh: 210, ch: 350, nb: 3 };
+    const scale = .1;
+    const parm2 =  { gap: parms.gap*scale, bw: parms.bw*scale, bh: parms.bh*scale, cw: parms.cw*scale, ch: parms.ch*scale, nb: parms.nb}
+    const big = this.makeCard0(parms, bgc);
+    const bounds = big.getBounds();
+    const smal = this.makeCard0(parm2, 'white');
+    // smal.scaleX =smal.scaleY = scale;
+    smal.x = bounds.width * scale/2; smal.y = bounds.height * scale/2;
+    big.addChild(smal);
+    return big;
   }
 
-  addImage(img: HTMLImageElement, row: number, col: number, color = 'grey', os = 1) {
-    const bm = new Bitmap(img);
-    bm.regX = img.width / 2;
-    bm.regY = img.height / 2;
-    const scale = os * this.rad / Math.max(img.height, img.width);
-    bm.scaleX = bm.scaleY = scale;
-    const sw = img.width * scale, sh = img.height * scale;
-    const cx = this.x0 + col * this.delx;
-    const cy = this.y0 + row * this.dely;
-    bm.x = cx;// - sw / 2;
-    bm.y = cy;// - sh / 2;
-    bm.rotation = 30;
-    this.addChild(this.paintDisk(color, cx, cy, this.rad / 2)); // background: HexShape
-    this.addChild(bm); // image
+  makeCard0(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'rgb(230,230,230)' ) {
+    const colors= ['red', 'blue', 'green', 'orange'];
+    const card = new Container();
+    const { gap, bw, bh, cw, ch, nb } = { gap: 10, bw: 30, cw: 250, bh: 180, ch: 300, nb: 3, ...parm }
+    const rect = new RectShape({ x: 0, y: 0, w: cw, h: ch }, bgc, '');
+    card.addChild(rect);
+    rect.setBounds(0, 0, cw, ch);
+    const dx = (bw + gap), tbw = (nb - 1) * dx + bw;
+    const x0 = (cw - tbw) / 2, y0 = (ch - bh) / 2;
+    const back = new RectShape({x: x0 - 1.5 * gap, y: y0-gap, w: cw-tbw, h: bh+2*gap}, 'white', '')
+    card.addChild(back);
+
+    for (let i = 0; i < 3; i++) {
+      const bar = new RectShape({ x: x0 + i * dx, y: y0 , w: bw, h: bh }, colors[i], '');
+      card.addChild(bar);
+    }
+    return card;
+  }
+}
+
+function makeStage(canvasId: string | HTMLCanvasElement, tick = true) {
+  let stage = new Stage(canvasId)
+  stage.tickOnUpdate = stage.tickChildren = tick
+  if (!stage.canvas) {
+    stage.enableMouseOver(0)
+    stage.enableDOMEvents(false)
+    stage.tickEnabled = stage.tickChildren = false
+  }
+  return stage
+}
+
+export type GridSpec = {
+  width: number,  // canvas size
+  height: number, // canvas size
+  nrow: number,
+  ncol: number,
+  y0?: number,
+  x0?: number,    // even numbered line indent
+  x1?: number,    // odd numbered line indent (x1 ?? x0)
+  delx?: number,
+  dely?: number,
+  cardw?: number,
+  cardh?: number,
+  bleed?: number,
+  dpi?: number,   // multiply [x0, y0, delx, dely] to get pixels; default: 1 (already in pixels)
+  double?:boolean,
+}
+
+export type PageSpec = {
+  gridSpec: GridSpec,
+  frontObjs: DisplayObject[],
+  backObjs?: (DisplayObject  | undefined)[] | undefined,
+  canvas?: HTMLCanvasElement,
+}
+
+export class ImageGrid {
+  // printer paper
+  static circle_1_inch: GridSpec = {
+    width: 8.433, height: 10.967, // not quite 8.5 X 11.0
+    nrow: 10, ncol: 8,
+    // width: 2530, height: 3290,
+    x0: .9, y0: 1.0,
+    delx: (1 + 1 / 8), dely: (1 + 1 / 8),
+    dpi: 300,
+  }
+
+  /** 5 rows of 7 columns */
+  static hexSingle_1_19: GridSpec = {
+    width: 3300, height: 2550, nrow: 5, ncol: 7,
+    x0: 576, y0: 450,
+    delx: 357, dely: 413,
+    dpi: 1,
+  }
+
+  /** 5 rows of 7 columns */
+  static hexDouble_1_19: GridSpec = {
+    width: 3300, height: 5100, nrow: 5, ncol: 7,
+    x0: 576, y0: 451,        // 245 + 412/2 = 451  (5099 - 245 = 4854) !~== 4854
+    delx: 357, dely: 413.1,  // 1.19*300=357; 357/H.sqrt_3_2 = 412.2 === (2308 - 247)/5 == 2061 = 412.2
+    dpi: 1,
+  }
+
+  /** 8 rows of 8 columns */
+  static circDouble_0_79: GridSpec = {
+    width: 3300, height: 5100, nrow: 8, ncol: 8,
+    x0: 242, y0: 335, x1: 430,
+    delx: 375, dely: 375,  // ; 2625/7 = 375 ; 1876/5 = 375.2
+    dpi: 1,
+  }
+    // (define PPG-POKER-18-SPEC '((file "PPGPoker18-0.png") (cardw 1108) (cardh 808)
+    // (xmin 120) (ymin 85) (xinc 1125) (yinc 825)
+    // (ncol 3) (nrow 6) (bleed 25)))
+  static cardSingle_3_5: GridSpec = {
+    width: 3600, height: 5400, nrow: 6, ncol: 3, cardw: 1110, cardh: 810, // (w*300 + 2*bleed)
+    x0: 120 + 3.5 * 150 + 30, y0: 85 + 3.5 * 150 + 30, delx: 1125, dely: 825, bleed: 30, double: false,
+  };
+
+  static cardSingle_1_75: GridSpec = {
+    width: 3600, height: 5400, nrow: 9, ncol: 4, cardw: 800, cardh: 575,
+    x0: 150 + 1.75 * 150 + 30, y0: 100 + 1.75 * 150 + 30, delx: 833, dely: 578.25, bleed: 30,
+  };
+
+  stage!: Stage;
+  canvas!: HTMLCanvasElement;
+
+  constructor() {
+  }
+
+  setStage(wh: WH, canvasId: string | HTMLCanvasElement = 'gridCanvas') {
+    if (typeof canvasId === 'string') {
+      this.canvas = (document.getElementById(canvasId) ?? document.createElement('canvas')) as HTMLCanvasElement;
+      this.canvas.id = canvasId;
+    } else {
+      this.canvas = canvasId as HTMLCanvasElement;
+    }
+    this.stage = makeStage(this.canvas);
+    this.stage.removeAllChildren();
+    this.setCanvasSize(wh);
+  }
+
+  setCanvasSize(wh: WH) {
+    this.canvas.width = wh.width;
+    this.canvas.height = wh.height;
+  }
+
+  makePage(pageSpec: PageSpec, canvas?: HTMLCanvasElement | string ) {
+    const gridSpec = pageSpec.gridSpec;
+    this.setStage(gridSpec, canvas);
+    const nc = this.addObjects(gridSpec, pageSpec.frontObjs, pageSpec.backObjs)
+    this.stage.update();
+    pageSpec.canvas = this.canvas;
+
+    const { id, width, height } = this.canvas;
+    const info = { id, width, height, nc }; // not essential...
+    console.log(stime(this, `.makePage: info =`), info);
+    return;
+  }
+
+  addObjects(gridSpec: GridSpec, frontObjs: DisplayObject[], backObjs: (DisplayObject | undefined)[] | undefined) {
+    const cont = new Container();
+    const def = { x0: 0, y0: 0, delx: 300, dely: 300, dpi: 1 }
+    const { width, height, x0, y0, x1, delx, dely, dpi, nrow, ncol } = { ...def, ...gridSpec };
+
+    this.stage.addChild(cont);
+    const XX = [x0, x1 ?? x0];
+    frontObjs.forEach((dObj, n) => {
+      const row = Math.floor(n / ncol);
+      const col = n % ncol;
+      const frontObj = dObj;
+      if (row > nrow) return;
+      const X0 = XX[row % 2]; // = ((row % 2) === 0) ? x0 : x1 ?? x0;
+      const x = (X0 + col * delx) * dpi;
+      const y = (y0 + row * dely) * dpi;
+      frontObj.x += x;
+      frontObj.y += y;
+      cont.addChild(frontObj);
+      const backObj = backObjs?.[n];
+      if (backObj) {
+        backObj.x += x;
+        backObj.y += (height * dpi - y); // + 2; // template is asymetric!
+        cont.addChild(backObj);
+      }
+    });
+    return cont.numChildren;
+  }
+
+  downloadImage(canvas: HTMLCanvasElement, filename = 'image.png', downloadId = 'download') {
+    const anchor = document.getElementById(downloadId) as HTMLAnchorElement;
+    const imageURL = canvas.toDataURL("image/png");
+    const octetURL = imageURL.replace("image/png", "image/octet-stream");
+    anchor.download = filename;
+    anchor.href = octetURL;
+    console.log(stime(this, `.downloadImage: ${canvas.id} -> ${filename} ${octetURL.length}`))
   }
 }
