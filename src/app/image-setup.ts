@@ -17,39 +17,58 @@ export class ImageSetup {
     new TileLoader().loadImages(this.imageArgs, (imap) => this.startup(qParams, imap));
   }
   startup(qParams: Params, imap: Map<string, HTMLImageElement>) {
-    const card = this.makeCard({}, 'red');
-    this.stage.x = 100; this.stage.y = 30;
+    let card = this.makeCard({}, 'red');
+    const bounds = card.getBounds()
+    this.stage.x = bounds.width/2 + 100; this.stage.y = bounds.height/2 + 30;
     this.stage.addChild(card);
-    this.stage.update();
+    card = this.makeCard({}, 'blue');
+    card.rotation = 180;
+    card.x += 300;
+    this.stage.addChild(card);
     this.stage.update();
   }
 
-  makeCard(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'white' ) {
-    const parms = { gap: 13, bw: 30, cw: 250, bh: 210, ch: 350, nb: 3 };
+  makeCard(parm: { gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number }, bgc = 'white') {
+    const parm0 = { gap: 13, bw: 30, cw: 250, bh: 210, ch: 350, rc: 25, nb: 3 };
+    const { gap, bw, bh, cw, ch, rc, nb } = { ...parm0, ...parm };
+    const parms = { gap, bw, bh, cw, ch, rc, nb }
     const scale = .1;
-    const parm2 =  { gap: parms.gap*scale*1.5, bw: parms.bw*scale*1.5, bh: parms.bh*scale*1.3, cw: parms.cw*scale, ch: parms.ch*scale, nb: parms.nb}
+
     const big = this.makeCard0(parms, bgc);
     const bounds = big.getBounds();
-    const smal = this.makeCard0(parm2, 'white');
-    smal.x = bounds.width * scale * .6; smal.y = bounds.height * scale * .4;
-    big.addChild(smal);
+    console.log(stime(this, `.makeCard:`), bounds);
+    const ps = { gap: gap * scale * 1.5, bw: bw * scale * 1.5, bh: bh * scale * 1.3, cw: cw * scale, ch: ch * scale, rc: 0, nb }
+
+    const smal1 = this.makeCard0(ps, 'white');
+    smal1.x = bounds.x + bounds.width * scale * 1.18;
+    smal1.y = bounds.y + bounds.height * scale * .94;
+    big.addChild(smal1);
+
+    const smal2 = this.makeCard0(ps, 'white');
+    smal2.x = -bounds.x - bounds.width * scale * 1.18;
+    smal2.y = -bounds.y - bounds.height * scale * .94;
+    big.addChild(smal2);
+
     return big;
   }
 
-  makeCard0(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'rgb(230,230,230)' ) {
+  makeCard0(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, rc?: number, nb?: number}, bgc = 'rgb(230,230,230)' ) {
     const colors= ['red', 'blue', 'green', 'orange'];
     const card = new Container();
-    const { gap, bw, bh, cw, ch, nb } = { gap: 15, bw: 30, cw: 250, bh: 180, ch: 300, nb: 3, ...parm }
-    const rect = new RectShape({ x: 0, y: 0, w: cw, h: ch }, bgc, '');
+    const { gap, bw, bh, cw, ch, rc, nb } = { gap: 15, bw: 30, cw: 250, bh: 180, ch: 300, rc: 0, nb: 3, ...parm }
+    const cx = cw/2, cy = ch/2;
+    const rect = new RectShape({ x: -cx, y: -cy, w: cw, h: ch, r: rc }, bgc, '');
     card.addChild(rect);
-    rect.setBounds(0, 0, cw, ch);
+    rect.setBounds(-cx, -cy, cw, ch);
     const dx = (bw + gap), tbw = (nb - 1) * dx + bw, edge = cw / 6, edgeh = cw/5;
-    const x0 = (cw - tbw) / 2, y0 = (ch - bh) / 2;
-    const back = new RectShape({ x: edge, y: edgeh, w: cw - 2 * edge, h: ch - 2 * edgeh }, 'white', '')
+    const x0 = (cw - tbw) / 2 - cx, y0 = (ch - bh) / 2 - cy;
+    const back = new RectShape({ x: edge - cx, y: edgeh - cy, w: cw - 2 * edge, h: ch - 2 * edgeh, r: rc/2 }, 'white', '')
     card.addChild(back);
 
-    for (let i = 0; i < 3; i++) {
-      const bar = new RectShape({ x: x0 + i * dx, y: y0 , w: bw, h: bh }, colors[i], '');
+    const dhi = bh * .03;
+    for (let i = 0; i < nb; i++) {
+      const dh = dhi * (nb - i);
+      const bar = new RectShape({ x: x0 + i * dx, y: y0 + dh, w: bw, h: bh - 2 * dh }, colors[i], '');
       card.addChild(bar);
     }
     return card;
