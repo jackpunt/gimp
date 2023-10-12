@@ -25,14 +25,13 @@ export class ImageSetup {
   }
 
   makeCard(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'white' ) {
-    const parms = { gap: 10, bw: 30, cw: 250, bh: 210, ch: 350, nb: 3 };
+    const parms = { gap: 13, bw: 30, cw: 250, bh: 210, ch: 350, nb: 3 };
     const scale = .1;
-    const parm2 =  { gap: parms.gap*scale, bw: parms.bw*scale, bh: parms.bh*scale, cw: parms.cw*scale, ch: parms.ch*scale, nb: parms.nb}
+    const parm2 =  { gap: parms.gap*scale*1.5, bw: parms.bw*scale*1.5, bh: parms.bh*scale*1.3, cw: parms.cw*scale, ch: parms.ch*scale, nb: parms.nb}
     const big = this.makeCard0(parms, bgc);
     const bounds = big.getBounds();
     const smal = this.makeCard0(parm2, 'white');
-    // smal.scaleX =smal.scaleY = scale;
-    smal.x = bounds.width * scale/2; smal.y = bounds.height * scale/2;
+    smal.x = bounds.width * scale * .6; smal.y = bounds.height * scale * .4;
     big.addChild(smal);
     return big;
   }
@@ -40,13 +39,13 @@ export class ImageSetup {
   makeCard0(parm: {gap?: number, bw?: number, bh?: number, cw?: number, ch?: number, nb?: number}, bgc = 'rgb(230,230,230)' ) {
     const colors= ['red', 'blue', 'green', 'orange'];
     const card = new Container();
-    const { gap, bw, bh, cw, ch, nb } = { gap: 10, bw: 30, cw: 250, bh: 180, ch: 300, nb: 3, ...parm }
+    const { gap, bw, bh, cw, ch, nb } = { gap: 15, bw: 30, cw: 250, bh: 180, ch: 300, nb: 3, ...parm }
     const rect = new RectShape({ x: 0, y: 0, w: cw, h: ch }, bgc, '');
     card.addChild(rect);
     rect.setBounds(0, 0, cw, ch);
-    const dx = (bw + gap), tbw = (nb - 1) * dx + bw;
+    const dx = (bw + gap), tbw = (nb - 1) * dx + bw, edge = cw / 6, edgeh = cw/5;
     const x0 = (cw - tbw) / 2, y0 = (ch - bh) / 2;
-    const back = new RectShape({x: x0 - 1.5 * gap, y: y0-gap, w: cw-tbw, h: bh+2*gap}, 'white', '')
+    const back = new RectShape({ x: edge, y: edgeh, w: cw - 2 * edge, h: ch - 2 * edgeh }, 'white', '')
     card.addChild(back);
 
     for (let i = 0; i < 3; i++) {
