@@ -1,4 +1,4 @@
-import { C, F, XYWH } from "@thegraid/common-lib";
+import { C, F, XYWH, className } from "@thegraid/common-lib";
 import { Container, DisplayObject, Graphics, Shape, Text } from "@thegraid/easeljs-module";
 import { H } from "./hex-intfs";
 import { TP } from "./table-params";
@@ -8,6 +8,7 @@ export class C1 {
   static grey = 'grey';
   static lightgrey2 = 'rgb(225,225,225)' // needs to contrast with WHITE influence lines
   static lightgrey_8 = 'rgb(225,225,225,.8)' // needs to contrast with WHITE influence lines
+  static white_8 = 'rgb(255,255,255,.8)' // not contrasting on physical tiles
 }
 
 export class CenterText extends Text {
@@ -54,6 +55,7 @@ export class ColorGraphics extends Graphics {
 export class PaintableShape extends Shape implements Paintable {
   constructor(public _cgf: CGF, public colorn?: string) {
     super();
+    this.name = className(this);
   }
   get cgf() { return this._cgf; }
   set cgf(cgf: CGF) {
@@ -71,10 +73,11 @@ export class PaintableShape extends Shape implements Paintable {
       // need to repaint, even if same color:
       this.graphics.clear();
       this.graphics = this.cgfGraphics = this.cgf(this.colorn = colorn);
-      if (this.cacheID) this.updateCache();
+      if (this.updateCacheInPaint && this.cacheID) this.updateCache();
     }
     return this.graphics;
   }
+  updateCacheInPaint = true;
 }
 
 /**
@@ -90,17 +93,14 @@ export class HexShape extends PaintableShape {
     this.setHexBounds(); // Assert radius & tilt are readonly, so bounds never changes!
   }
 
+  setHexBounds(r = this.radius, tilt = this.tilt) {
+    const b = H.hexBounds(r, tilt);
+    this.setBounds(b.x, b.y, b.width, b.height);
+  }
+
   setCacheID() {
     const b = this.getBounds();              // Bounds are set
     this.cache(b.x, b.y, b.width, b.height);
-  }
-
-  setHexBounds(r = this.radius, tilt = this.tilt) {
-    // dp(...6), so tilt: 30 | 0; being nsAxis or ewAxis;
-    const w = r * Math.cos(H.degToRadians * tilt);
-    const h = r * Math.cos(H.degToRadians * (tilt - 30));
-    this.setBounds(-w, -h, 2 * w, 2 * h);
-    return { x: -2, y: -H, w: 2 * w, h: 2 * h };
   }
 
   /**
@@ -177,14 +177,14 @@ export class RectShape extends PaintableShape {
     g0?: Graphics
   ) {
     super((fillc) => this.rscgf(fillc as string));
-    this.rect = { x, y, w: w, h: h };
+    this.rect = { x, y, w, h }
     this.rc = r;
     this.g0 = g0?.clone() ?? new Graphics();
     this.paint(fillc);
   }
 
   rscgf(fillc: string) {
-    const g = this.g0?.clone() ?? new Graphics();
+    const g = this.g0 ? this.g0.clone() : new Graphics();
     const { x, y, w, h } = this.rect;
     (fillc ? g.f(fillc) : g.ef());
     (this.strokec ? g.s(this.strokec) : g.es());
@@ -198,35 +198,32 @@ export class RectShape extends PaintableShape {
 }
 
 export class TileShape extends HexShape {
-  static fillColor = C1.lightgrey_8;// 'rgba(200,200,200,.8)'
+  static fillColor = C1.white_8;
+
   constructor(radius?: number, tilt?: number) {
     super(radius, tilt); // sets Bounnds & this.cgf
-    const super_cgf = this.cgf;
-    this.cgf = (colorn: string = 'black') => {
-      return this.tscgf(colorn, super_cgf);
-    }
-  }
-  replaceDisk(colorn: string, r2 = this.radius) {
-    if (!this.cacheID) this.setCacheID();
-    else this.updateCache();               // write curent graphics to cache
-    const g = this.graphics;
-    // g.c().f(C.BLACK).dc(0, 0, r2);       // bits to remove
-    // this.updateCache("destination-out"); // remove disk from solid hexagon
-    g.c().f(colorn).dc(0, 0, r2);        // fill with translucent disk
-    this.updateCache("source-over");     // update with new disk
-    return g;
+    this.cgf = this.tscgf as CGF;
   }
 
-  readonly bgColor = C.nameToRgbaString(C.WHITE, .8);
+  replaceDisk(colorn: string, r2 = this.radius) {
+    if (!this.cacheID) this.setCacheID();
+    else this.updateCache();             // write curent graphics to cache
+    const g = this.graphics;
+    g.c().f(C.BLACK).dc(0, 0, r2);       // bits to remove
+    this.updateCache("destination-out"); // remove disk from solid hexagon
+    g.c().f(colorn).dc(0, 0, r2);        // fill with translucent disk
+    this.updateCache("source-over");     // update with new disk
+    this.updateCacheInPaint = false;     // graphics does not represent the final image
+    return g;
+  }
   /** colored HexShape filled with very-lightgrey disk: */
-  tscgf(colorn: string, super_cgf = (color?: string) => new Graphics()) {
-    // HexShape.cgf(rgba(C.WHITE, .8))
-    const g = this.graphics = super_cgf.call(this, this.bgColor); // paint HexShape(White)
-    const fillColor = C.nameToRgbaString(colorn, .8);
-    //this.replaceDisk(fillColor, this.radius * H.sqrt3_2 * (55 / 60));
-    return this.graphics = g;
+  tscgf(colorn: string, super_cgf: CGF = this.hscgf as CGF) {
+    super_cgf.call(this, colorn); // paint HexShape(colorn)
+    const g = this.replaceDisk(TileShape.fillColor, this.radius * H.sqrt3_2 * (54 / 60));
+    return g;
   }
 }
+
 
 export class UtilButton extends Container implements Paintable {
   blocked: boolean = false
