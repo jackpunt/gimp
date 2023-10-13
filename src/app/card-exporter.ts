@@ -1,5 +1,5 @@
 import { Params } from "@angular/router";
-import { Constructor, stime } from "@thegraid/common-lib";
+import { stime } from "@thegraid/common-lib";
 import { makeStage } from "@thegraid/easeljs-lib";
 import { Container, DisplayObject, Stage } from "@thegraid/easeljs-module";
 import { ImageGrid, PageSpec } from "./image-grid";
@@ -33,12 +33,13 @@ export class CardExporter {
     const bleed0 = {...Card.parm0, bleed: 0};
     const card1 = new Card(undefined, undefined, bleed0);
     const bounds = card1.getBounds();
+    card1.x += 2.5 * Card.dpi;
     card1.x += bounds.width/2; card1.y += bounds.height/2;
     this.stage.addChild(card1);
-    const card2 = new Card([1,2]);
+    const card2 = new Card([], 1);
+    card2.x += 5.3 * Card.dpi;
     card2.x += bounds.width/2; card2.y += bounds.height/2;
     card2.rotation = 180;
-    card2.x += 2.8 * Card.dpi;
     this.stage.addChild(card2);
     this.stage.update();
   }
@@ -46,14 +47,23 @@ export class CardExporter {
   makeImagePages() {
     const pageSpecs: PageSpec[] = [];
     const cards = this.makeAllCards();
-    // this.cardsToTemplate(cards, ImageGrid.cardSingle_1_75, pageSpecs);
-    this.cardsToTemplate(cards, ImageGrid.cardSingle_3_5, pageSpecs);
+    const backs = this.makeBacks();
+    this.cardsToTemplate(backs, 'backs', ImageGrid.cardSingle_3_5, pageSpecs);
+    this.cardsToTemplate(cards, 'stripe', ImageGrid.cardSingle_3_5, pageSpecs);
+    // this.cardsToTemplate(cards, 'stripe', ImageGrid.cardSingle_1_75, pageSpecs);
     return pageSpecs;
   }
 
   makeAllCards() {
     const rv = this.makeCards(2);
     return this.makeCards(3, rv);
+  }
+
+  makeBacks(n = 18) {
+    const rv = new Array<Card>(18);
+    const back = new Card([], 0);
+    rv.fill(back, 0, n);
+    return rv;
   }
 
   makeCards(n = 2, rv: Card[] = []) {
@@ -81,7 +91,7 @@ export class CardExporter {
     return rv;
   }
 
-  cardsToTemplate(cards: DisplayObject[], gridSpec = ImageGrid.cardSingle_3_5, pageSpecs: PageSpec[] = []) {
+  cardsToTemplate(cards: DisplayObject[], basename = 'image', gridSpec = ImageGrid.cardSingle_3_5, pageSpecs: PageSpec[] = []) {
     const frontAry = [] as DisplayObject[][];
     const page = pageSpecs.length;
     const { nrow, ncol } = gridSpec, perPage = nrow * ncol;
@@ -95,7 +105,7 @@ export class CardExporter {
     frontAry.forEach((frontObjs, pagen) => {
       const backObjs = undefined;
       const canvasId = `canvas_P${pagen}`;
-      const pageSpec = { gridSpec, frontObjs, backObjs } as PageSpec;
+      const pageSpec = { gridSpec, frontObjs, backObjs, basename } as PageSpec;
       pageSpecs[pagen] = pageSpec;
       console.log(stime(this, `.makePage: canvasId=${canvasId}, pageSpec=`), pageSpec);
       this.imageGrid.makePage(pageSpec, canvasId);  // make canvas with images, but do not download [yet]

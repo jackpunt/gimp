@@ -1,7 +1,6 @@
 <div class="content" role="main" style=background-color:rgb(251,245,255)>
   <stage-comp id="stageComp" [width]=3600 [height]=5400> StageComponent here</stage-comp>
-  <!-- <canvas id="gridCanvas"></canvas> -->
-  <div style="position: absolute; top: 5px; left: 50; z-index: 9999">
+  <div style="position: absolute; top: 5px; left: 10px; z-index: 9999; scale: 1;">
     <a href="http://localhost:4200/" target="_blank" rel="noopener">{{ title }}</a>
     <br/>
     <span>{{ timestamp }}</span>
@@ -12,6 +11,12 @@
     <!-- 1 inch circle Premium Label Supply: [height]=3290 [width]=2530 -->
     <a id="makePage"><button type="button">MakePage</button></a>
     <br/>
+    <a id="viewPage"><button type="button">ViewPage</button></a>
+    <br/>
     <a id="download" download="image.png"><button type="button">Download</button></a>
+  </div>
+  <div id = 'canvasDiv'
+  style="position: absolute; top: 150px; left: 15px; z-index: 9; scale: .1; width: 360px; height: 540px; transform-origin: 0px 0px">
+  <!-- <canvas id="Canvas_Pn"></canvas> -->
   </div>
  </div>
