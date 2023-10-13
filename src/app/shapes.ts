@@ -177,7 +177,8 @@ export class RectShape extends PaintableShape {
     g0?: Graphics
   ) {
     super((fillc) => this.rscgf(fillc as string));
-    this.rect = { x, y, w, h }
+    this.rect = { x, y, w, h };
+    this.setBounds(x, y, w, h);
     this.rc = r;
     this.g0 = g0?.clone() ?? new Graphics();
     this.paint(fillc);

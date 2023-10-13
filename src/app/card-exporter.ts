@@ -1,9 +1,9 @@
 import { Params } from "@angular/router";
-import { stime } from "@thegraid/common-lib";
+import { selectN, stime } from "@thegraid/common-lib";
 import { makeStage } from "@thegraid/easeljs-lib";
-import { Container, DisplayObject, Stage } from "@thegraid/easeljs-module";
+import { Container, DisplayObject, Graphics, Stage } from "@thegraid/easeljs-module";
 import { ImageGrid, PageSpec } from "./image-grid";
-import { RectShape } from "./shapes";
+import { CircleShape, RectShape } from "./shapes";
 import { TileLoader } from "./tile-loader";
 // end imports
 
@@ -30,13 +30,13 @@ export class CardExporter {
   }
 
   twoCards() {
-    const bleed0 = {...Card.parm0, bleed: 0};
+    const bleed0 = { ...Card.parm0, bleed: 0 };
     const card1 = new Card(undefined, undefined, bleed0);
     const bounds = card1.getBounds();
     card1.x += 2.5 * Card.dpi;
     card1.x += bounds.width/2; card1.y += bounds.height/2;
     this.stage.addChild(card1);
-    const card2 = new Card([], 1);
+    const card2 = this.makeBack();
     card2.x += 5.3 * Card.dpi;
     card2.x += bounds.width/2; card2.y += bounds.height/2;
     card2.rotation = 180;
@@ -59,11 +59,56 @@ export class CardExporter {
     return this.makeCards(3, rv);
   }
 
-  makeBacks(n = 18) {
-    const rv = new Array<Card>(18);
-    const back = new Card([], 0);
-    rv.fill(back, 0, n);
+  makeBacks(n = 24) {
+    const rv: Card[] = []
+    for (let i = 0; i < n; i++) {
+      rv.push(this.makeBack());
+    }
     return rv;
+  }
+
+  retainedBack: Card | undefined;
+
+  makeRetainedBack() {
+    const bleed0 = { ...Card.parm0, bleed: 0 };
+    Card.backColor = 'black';
+    const back = new Card([], -1), bleed = Card.parm0.bleed;
+    const base = back.baseShape as RectShape, main = base.parent;
+    const brect = back.bleedShape as RectShape;
+    const circs = new Container();
+    main.addChild(circs);
+    const { x, y, width, height } = base.getBounds();
+    for (let i = 0; i < 32; i++) {
+      const color = selectN(Card.colors, 1, false)[0];
+      const rad = Math.random() * width / 2;
+      const g0 = new Graphics().ss(width/30);
+      const ring = new CircleShape('', rad, color, g0);
+      ring.x = x + Math.random() * width;
+      ring.y = y + Math.random() * height;
+      circs.addChild(ring);
+    }
+    circs.cache(x + bleed, y + bleed, width - 2 * bleed, height - 2 * bleed);
+    back.cache(x, y, width, height);
+    if (brect) {
+      const { x, y, width, height } = brect.getBounds();
+      back.cache(x, y, width, height);
+    }
+    back.updateCache();
+    this.retainedBack = back;
+    return back;
+  }
+
+  copyRetainedBack() {
+    const back = this.retainedBack as Card;
+    const { x, y, width, height } = back.getBounds();
+    const card = new Card([], -1);
+    card.cache(x, y, width, height);
+    card.bitmapCache = back.bitmapCache;
+    return card;
+  }
+
+  makeBack() {
+    return (this.retainedBack) ? this.copyRetainedBack() : this.makeRetainedBack();
   }
 
   makeCards(n = 2, rv: Card[] = []) {
@@ -135,10 +180,15 @@ export class Card extends Container {
 
   static mini = .1;
 
+  static backColor = 'black';
+
   constructor(bc = [0, 1, 2], cc = bc[0], parms = Card.parm0) {
     super();
-    this.addChild(...this.makeCard3(bc, Card.colors[cc], parms, ));
+    const children = this.makeCard3(bc, Card.colors[cc] ?? Card.backColor, parms, );
+    this.addChild(...children);
   }
+  baseShape: RectShape | undefined;
+  bleedShape: RectShape | undefined;
 
   makeCard3(bc: number[], bgc: string, parm?: PARMQ, ) {
     const { gap, bw, bh, cw, ch, rc, bleed } = { ...Card.parm0, ...(parm ?? Card.parm0 )};
@@ -149,18 +199,22 @@ export class Card extends Container {
     const bounds = big.getBounds();
     console.log(stime(this, `.makeCard:`), bc, bgc);
     const ps = { gap: gap * mini * 1.5, bw: bw * mini * 1.5, bh: bh * mini * 1.3, cw: cw * mini, ch: ch * mini, rc: 0, bleed: 0 }
+    const rv = [big];
+    if (bc.length > 0) {
+      const minibgc = 'white';
+      const sx = bounds.x + bounds.width * mini * 1.018;
+      const sy = bounds.y + bounds.height * mini * .8;
+      const smal1 = this.makeCard(bc, minibgc, ps);
+      smal1.x = sx;
+      smal1.y = sy;
+      rv.push(smal1);
 
-    const sx = bounds.x + bounds.width * mini * 1.018;
-    const sy = bounds.y + bounds.height * mini * .8;
-    const smal1 = this.makeCard(bc, 'white', ps);
-    smal1.x = sx;
-    smal1.y = sy;
-
-    const smal2 = this.makeCard(bc, 'white', ps);
-    smal2.x = -sx;
-    smal2.y = -sy;
-
-    return [big, smal1, smal2];
+      const smal2 = this.makeCard(bc, minibgc, ps);
+      smal2.x = -sx;
+      smal2.y = -sy;
+      rv.push(smal2);
+    }
+    return rv;
   }
 
   makeCard(bc = [0, 1, 2], bgc = Card.colors[bc[0]], parm: PARMQ, ) {
@@ -169,18 +223,20 @@ export class Card extends Container {
     const { gap, bw, bh, cw, ch, rc, bleed } = { ...Card.parm0, ...parm }
     const nb = bc.length;
     const cx = cw / 2, cy = ch / 2;
-    const rect = new RectShape({ x: -cx, y: -cy, w: cw, h: ch, r: rc }, bgc, '');
+    const base = new RectShape({ x: -cx, y: -cy, w: cw, h: ch, r: rc }, bgc, '');
+    this.baseShape = base;
     if (bleed > 0) {
       const xb = cx + bleed, yb = cy + bleed, wb = cw + 2 * bleed, hb = ch + 2 * bleed, rb = rc + bleed;
       const brect = new RectShape({ x: -xb, y: -yb, w: wb, h: hb, r: rb }, bgc, '');
       card.addChild(brect);
+      this.bleedShape = brect;
     }
-    card.addChild(rect);
-    rect.setBounds(-cx, -cy, cw, ch);
+    card.addChild(base);
+    base.setBounds(-cx, -cy, cw, ch);
     const dx = (bw + gap), tbw = (nb - 1) * dx + bw, edge = cw / 6, edgeh = cw/5;
     const x0 = (cw - tbw) / 2 - cx, y0 = (ch - bh) / 2 - cy;
     const back = new RectShape({ x: edge - cx, y: edgeh - cy, w: cw - 2 * edge, h: ch - 2 * edgeh, r: rc/2 }, 'white', '')
-    card.addChild(back);
+    if (nb > 0) card.addChild(back);
 
     const dhi = bh * .03;
     bc.forEach((n, i) => {
