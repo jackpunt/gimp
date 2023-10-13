@@ -46,6 +46,7 @@ export class CardExporter {
   makeImagePages() {
     const pageSpecs: PageSpec[] = [];
     const cards = this.makeAllCards();
+    // this.cardsToTemplate(cards, ImageGrid.cardSingle_1_75, pageSpecs);
     this.cardsToTemplate(cards, ImageGrid.cardSingle_3_5, pageSpecs);
     return pageSpecs;
   }
@@ -70,6 +71,7 @@ export class CardExporter {
             rv.push(new Card(bc, bc[0]));
             rv.push(new Card(bc, bc[n - 1]));
           }
+          bc[2] = -1;
         } else {
           rv.push(new Card(bc, bc[0]));
           rv.push(new Card(bc, bc[n - 1]));
@@ -105,12 +107,22 @@ export class CardExporter {
 export class Card extends Container {
   static colors = ['red', 'blue', 'green', 'orange'];
   static dpi = 300;
-  static parm0: PARMS = {
+  static parm3_5: PARMS = {
     gap: .13 * Card.dpi, bw: .3 * Card.dpi,
     cw: 2.5 * Card.dpi, bh: 2.1 * Card.dpi,
     ch: 3.5 * Card.dpi, rc: .14 * Card.dpi,
     bleed: (28 / 300) * Card.dpi,
   };
+
+  static parm1_75: PARMS = {
+    gap: .1 * Card.dpi, bw: .2 * Card.dpi,
+    cw: 1.75 * Card.dpi, bh: 1.4 * Card.dpi,
+    ch: 2.5 * Card.dpi, rc: .14 * Card.dpi,
+    bleed: (25 / 300) * Card.dpi,
+  };
+
+  static parm0 = Card.parm3_5;
+
   static mini = .1;
 
   constructor(bc = [0, 1, 2], cc = bc[0], parms = Card.parm0) {

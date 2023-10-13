@@ -69,9 +69,12 @@ export class ImageGrid {
     x0: 120 + 3.5 * 150 + 30, y0: 83 + 3.5 * 150 + 30, delx: 1125, dely: 825, bleed: 30, double: false,
   };
 
+  // (define PPG-MINI-36-SPEC '((file "PPGMiniCard36-0.png") (cardw 800) (cardh 575)
+	// (xmin 150) (ymin 100) (xinc 833) (yinc 578.25)
+	// (over 1) (bleed 25) (xlim 3600) (ylim 5400))
   static cardSingle_1_75: GridSpec = {
     width: 3600, height: 5400, nrow: 9, ncol: 4, cardw: 800, cardh: 575,
-    x0: 150 + 1.75 * 150 + 30, y0: 100 + 1.75 * 150 + 30, delx: 833, dely: 578.25, bleed: 30,
+    x0: 258 + 1.75 * 150 + 30, y0: 96 + 1.75 * 150 + 30, delx: 833, dely: 578.25, bleed: 25,
   };
 
   stage!: Stage;
