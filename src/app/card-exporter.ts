@@ -3,7 +3,7 @@ import { selectN, stime } from "@thegraid/common-lib";
 import { makeStage } from "@thegraid/easeljs-lib";
 import { Container, DisplayObject, Graphics, Stage } from "@thegraid/easeljs-module";
 import { ImageGrid, PageSpec } from "./image-grid";
-import { CircleShape, RectShape } from "./shapes";
+import { CenterText, CircleShape, RectShape } from "./shapes";
 import { TileLoader } from "./tile-loader";
 // end imports
 
@@ -36,18 +36,22 @@ export class CardExporter {
     card1.x += 2.5 * Card.dpi;
     card1.x += bounds.width/2; card1.y += bounds.height/2;
     this.stage.addChild(card1);
-    const card2 = this.makeBack();
+    const card2 = new Card(undefined, undefined);
     card2.x += 5.3 * Card.dpi;
     card2.x += bounds.width/2; card2.y += bounds.height/2;
     card2.rotation = 180;
     this.stage.addChild(card2);
+    const back = this.makeBack();
+    back.x += 8.1 * Card.dpi;
+    back.x += bounds.width/2; back.y += bounds.height/2;
+    this.stage.addChild(back);
     this.stage.update();
   }
 
   makeImagePages() {
     const pageSpecs: PageSpec[] = [];
-    const cards = this.makeAllCards();
     const backs = this.makeBacks();
+    const cards = this.makeAllCards();
     this.cardsToTemplate(backs, 'backs', ImageGrid.cardSingle_3_5, pageSpecs);
     this.cardsToTemplate(cards, 'stripe', ImageGrid.cardSingle_3_5, pageSpecs);
     // this.cardsToTemplate(cards, 'stripe', ImageGrid.cardSingle_1_75, pageSpecs);
@@ -55,11 +59,12 @@ export class CardExporter {
   }
 
   makeAllCards() {
+    Card.nCard = 1;
     const rv = this.makeCards(2);
     return this.makeCards(3, rv);
   }
 
-  makeBacks(n = 24) {
+  makeBacks(n = 18) {
     const rv: Card[] = []
     for (let i = 0; i < n; i++) {
       rv.push(this.makeBack());
@@ -160,7 +165,8 @@ export class CardExporter {
 }
 
 export class Card extends Container {
-  static colors = ['red', 'blue', 'green', 'orange'];
+  static nCard = 0;
+  static colors = ['red', 'orange', 'green', 'blue'].reverse();
   static dpi = 300;
   static parm3_5: PARMS = {
     gap: .13 * Card.dpi, bw: .3 * Card.dpi,
@@ -184,9 +190,11 @@ export class Card extends Container {
 
   constructor(bc = [0, 1, 2], cc = bc[0], parms = Card.parm0) {
     super();
+    this.num = Card.nCard++;
     const children = this.makeCard3(bc, Card.colors[cc] ?? Card.backColor, parms, );
     this.addChild(...children);
   }
+  num: number;
   baseShape: RectShape | undefined;
   bleedShape: RectShape | undefined;
 
@@ -196,7 +204,11 @@ export class Card extends Container {
     const mini = Card.mini;
 
     const big = this.makeCard(bc, bgc, parms, );
-    const bounds = big.getBounds();
+    const size = cw / 15, nText = new CenterText(`${this.num}`, size);
+    nText.x = (size * 1.5 - cw / 2), nText.y = ch / 2 - size * 1.5;
+    big.addChild(nText);
+
+    const bounds = this.baseShape!.getBounds();
     console.log(stime(this, `.makeCard:`), bc, bgc);
     const ps = { gap: gap * mini * 1.5, bw: bw * mini * 1.5, bh: bh * mini * 1.3, cw: cw * mini, ch: ch * mini, rc: 0, bleed: 0 }
     const rv = [big];
