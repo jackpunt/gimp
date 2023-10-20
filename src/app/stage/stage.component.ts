@@ -51,11 +51,9 @@ export class StageComponent implements OnInit {
 
     }
     const urlParams = new URLSearchParams(window.location.search);
-    TP.ghost = urlParams.get('host') || TP.ghost
-    TP.gport = Number.parseInt(urlParams.get('port') || TP.gport.toString(10), 10)
-    TP.networkUrl = buildURL(undefined)
-    let extstr = urlParams.get('ext')
-    let ext = !!extstr ? extstr.split(',') : []
+    TP.ghost = urlParams.get('host') || TP.ghost;
+    TP.gport = Number.parseInt(urlParams.get('port') || TP.gport.toString(10), 10);
+    TP.networkUrl = buildURL(undefined);
     new CardExporter(this.mapCanvasId, this.qParams) // load images; new GamePlay
   }
   // see: stream-writer.setButton
